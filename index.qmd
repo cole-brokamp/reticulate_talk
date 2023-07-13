@@ -1,0 +1,298 @@
+---
+title: "Using Python from within R: An R package development perspective"
+subtitle: "CCHMC Bilingual Data Science Meeting"
+author: "Cole Brokamp"
+date: 2023-07-13
+format: 
+  revealjs:
+    theme: codec.scss
+    standalone: true
+    embed-resources: true
+---
+
+## 
+
+:::{#title-slide .center}
+
+*BUG & RUG present* 
+
+&nbsp;
+&nbsp;
+
+### **Bilingual Data Science Meeting**
+
+&nbsp;
+&nbsp;
+
+July 13th, 2023
+
+&nbsp;
+&nbsp;
+
+:::
+
+```{r}
+#| out.width: 0.6in
+#| dpi: 300
+#| fig.align: center
+knitr::include_graphics("figs/buginarug.png")
+```
+
+## 👋 Welcome
+
+[Join](https://outlook.office365.com/owa/r@cchmc.onmicrosoft.com/groupsubscription.ashx?action=join) the RUG Outlook group for updates and events.
+![](figs/join_rug.png){fig-align="center"}{width=180%}
+
+## Why python?
+
+- 'default' bindings for well established data libraries often first in python
+- "convert this python code to R"
+- working with large datasets on disk
+- machine learning, natural language processing
+
+. . . 
+
+```{r}
+#| out.width: 7in
+#| dpi: 300
+#| fig.align: center
+knitr::include_graphics("figs/buginarug_meme.png")
+```
+
+## Bilingual data science
+
+&nbsp;
+
+**Why?**
+
+- streamline data science team workflows
+- concepts (e.g., tidy, ggplot, pandas, etc)
+- value of code/language includes technical *and* cognitive speed
+
+. . .
+
+&nbsp;
+
+**Examples**
+
+- RMarkdown and RStudio
+- Posit
+- Shiny for Python
+- Quarto
+- Connect
+
+## Learning python for R users
+
+- [Primer on python for R users](https://rstudio.github.io/reticulate/articles/python_primer.html)
+- [More links to learn python](https://rstudio.github.io/reticulate/#learning-more)
+
+## R-Python data type conversions
+
+|R | Python | Examples|
+|:----:|:----:|-----------|
+|Single-element vector | Scalar | `1`, `1L`, `TRUE`, `"foo"`|
+|Multi-element vector |	List | `c(1.0, 2.0, 3.0)`, `c(1L, 2L, 3L)`|
+|List of multiple types | Tuple | `list(1L, TRUE, "foo")`|
+|Named list | Dict | `list(a = 1L, b = 2.0)`, `dict(x = x_data)`|
+|Matrix/Array | NumPy ndarray |	`matrix(c(1,2,3,4), nrow = 2, ncol = 2)`|
+|Data Frame | Pandas DataFrame | `data.frame(x = c(1,2,3), y = c("a", "b", "c"))`|
+|Function | Python function | `function(x) x + 1`|
+|NULL, TRUE, FALSE | None, True, False | `NULL`, `TRUE`, `FALSE`|
+
+## `reticulate`
+
+&nbsp;
+
+`reticulate` is the R interface to python
+
+&nbsp;
+
+<https://rstudio.github.io/reticulate/>
+
+&nbsp;
+
+```{r}
+#| echo: true
+# install.packages("reticulate")
+library(reticulate)
+os <- import("os")
+os$listdir(".")
+```
+
+## Configuring python
+
+By default, {reticulate} uses first available non-system Python executable: 
+
+```{r}
+#| echo: true
+Sys.which("python3")
+```
+
+Alternatively, create or specify Python versions in virtual or Conda environments
+
+```{r}
+#| echo: true
+virtualenv_create("r-parcel")
+use_virtualenv("~/.virtualenvs/r-parcel/")
+py_config()
+```
+
+## Install
+
+&nbsp;
+
+### python
+
+```{r}
+#| echo: true
+#| eval: false
+install_miniconda()
+# or
+install_python()
+```
+
+Simple install with `py_install()` will, by defult, be stored within a virtualenv or conda environment named `r-reticulate`
+
+&nbsp;
+
+### python packages
+
+Create an environment, install packages within it, and then call from R:
+
+```{r}
+#| echo: true
+#| eval: true
+virtualenv_install("r-reticulate", "usaddress")
+```
+
+(Can also be managed with usual python tools.)
+
+## `usaddress`
+
+> 🇺🇸 a [python library](https://usaddress.readthedocs.io/en/latest/) for parsing unstructured United States address strings into address components 
+
+```python
+>>> import usaddress
+>>> usaddress.tag('123 Main St. Suite 100 Chicago, IL')
+(OrderedDict([
+  ('AddressNumber', '123'),
+  ('StreetName', 'Main'),
+  ('StreetNamePostType', 'St.'),
+  ('OccupancyType', 'Suite'),
+  ('OccupancyIdentifier', '100'),
+  ('PlaceName', 'Chicago'),
+  ('StateName', 'IL')]),
+'Street Address')
+```
+
+Uses a [probabilistic parser](https://parserator.datamade.us/about/) trained on real, parsed addresses to return tagged address parts for each address type; e.g.,
+
+## Calling python
+
+1. [Python REPL](https://rstudio.github.io/reticulate/#python-repl): `repl_python()`
+1. [Python in R Markdown](https://rstudio.github.io/reticulate/#python-in-r-markdown) 
+1. [Sourcing Python scripts](https://rstudio.github.io/reticulate/#sourcing-python-scripts)
+1. [Importing Python modules](https://rstudio.github.io/reticulate/#importing-python-modules)
+
+&nbsp;
+
+- R data types are automatically converted to their equivalent Python types
+- Python environment remains available
+
+## Import
+
+Call the usaddress module from R by importing it:
+
+```{r}
+#| echo: true
+usaddress <- import("usaddress")
+```
+Call functions (and other data) within Python modules (and classes) via the `$` operator: (This means code completion and inline help are built in!)
+
+```{r}
+#| echo: true
+usaddress$tag("3333 Burnet Ave Cincinnati OH 45219")
+```
+
+## {parcel} package development
+
+&nbsp;
+
+<https://github.com/geomarker-io/parcel>
+
+&nbsp;
+
+Followed [best practices suggestions](https://rstudio.github.io/reticulate/articles/package.html) from {reticulate} package authors.
+
+## Provide function to install dependencies
+
+<https://github.com/geomarker-io/parcel/tree/main#installation>
+
+## Delay loading python modules
+
+```{r}
+#| echo: true
+#| eval: false
+usaddress <- NULL
+dedupe <- NULL
+
+.onLoad <- function(libname, pkgname) {
+  usaddress <<- reticulate::import("usaddress", delay_load = TRUE, convert = TRUE)
+  dedupe <<- reticulate::import("dedupe", delay_load = TRUE, convert = FALSE)
+  py <<- reticulate::import_builtins(convert = TRUE)
+} 
+```
+
+## Carefully check tests for CRAN or other automated checks
+
+```{r}
+#| echo: true
+#| eval: false
+skip_if_no_usaddress <- function() {
+  have_usaddress <- reticulate::py_module_available("usaddress")
+  if (!have_usaddress) {
+    skip("usaddress python module not available for testing")
+  }
+}
+
+test_that("tag_address works", {
+  skip_if_no_usaddress()
+  tag_address("3333 Burnet Ave Cincinnati OH 45219") |>
+    expect_identical(
+      tibble::tibble(
+        street_number = "3333",
+        street_name = "burnet ave",
+        city = "cincinnati",
+        state = "oh",
+        zip_code = "45219"
+      )
+    )
+})
+```
+
+## Use your own convert methods as necessary
+
+From [parcel](https://github.com/geomarker-io/parcel/blob/5b2ccc0be8b6062b1c1e5c71ccbd2320da5cab16/R/link_parcel.R#L43-L48):
+
+```{r}
+#| eval: false
+#| echo: true
+np <- reticulate::import("numpy", convert = FALSE)
+alinks <- np$array(links)
+pairs <-
+  alinks[["pairs"]] |>
+  reticulate::py_to_r() |>
+  as.vector()
+```
+
+## Thank You
+
+&nbsp;
+
+🌐 [https://colebrokamp.com](https://colebrokamp.com)
+
+👨‍💻️ [github.com/cole-brokamp](https://github.com/cole-brokamp)
+
+🐦 [@cole_brokamp](https://twitter.com/cole_brokamp)
+
+📧 [cole.brokamp@cchmc.org](mailto:cole.brokamp@cchmc.org)
